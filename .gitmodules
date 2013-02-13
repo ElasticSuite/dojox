@@ -1,3 +1,3 @@
 [submodule "app"]
 	path = app
-	url = ./app
+	url = git@github.com:ElasticSuite/dojox_application.git
