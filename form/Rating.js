@@ -7,7 +7,7 @@ define([
 	"dojo/on",
 	"dojo/string",
 	"dojo/query",
-	"dijit/form/_FormWidget"
+	"dijit/form/_FormValueWidget"
 ], function(declare, lang, domAttr, domClass, mouse, on, string, query, FormWidget){
 
 
