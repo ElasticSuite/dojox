@@ -357,6 +357,7 @@ define(["dojo/_base/lang",
 				});
 			}, 33);
 		});		   
+		return waitingList;
 	};
 	
 	transition.chainedPlay = function(/*Array*/args){
