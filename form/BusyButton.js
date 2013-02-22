@@ -125,6 +125,7 @@ var _BusyButtonMixin = declare("dojox.form._BusyButtonMixin", null, {
 		// only do something if button is not busy
 		if(!this.isBusy){
 			this.inherited(arguments);	// calls onClick()
+			this.onClick(e);
 			this.makeBusy();
 		}
 	}
