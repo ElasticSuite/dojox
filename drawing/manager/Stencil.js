@@ -478,6 +478,9 @@ function(dojo, oo, defaults){
 			onStencilUp: function(/*EventObject*/obj){
 				// summary:
 				//		Event fired on mouseup off of a stencil
+				if (this._dragBegun) {
+					this.onDragEnd(obj);
+				}
 
 			},
 			
