@@ -8,7 +8,7 @@ function(dojo, oo, defaults){
 
 			// TODO: mixin props
 
-			surface = options.surface;
+			this.surface = options.surface;
 			this.canvas = options.canvas;
 			
 			//this.defaults = defaults.copy();
@@ -254,10 +254,10 @@ function(dojo, oo, defaults){
 				});
 				
 				if(this.group){
-					surface.remove(this.group);
+					this.surface.remove(this.group);
 					this.group.removeShape();
 				}
-				this.group = surface.createGroup();
+				this.group = this.surface.createGroup();
 				this.group.setTransform({dx:0, dy: 0});
 				
 				this.withSelected(function(m){
@@ -294,7 +294,7 @@ function(dojo, oo, defaults){
 				
 				this.anchors.remove(stencil);
 				
-				surface.add(stencil.container);
+				this.surface.add(stencil.container);
 				stencil.selected && stencil.deselect();
 				stencil.applyTransform(this.group.getTransform());
 			},
