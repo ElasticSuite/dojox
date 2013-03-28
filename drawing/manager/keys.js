@@ -166,6 +166,7 @@ function(dojo, utilCommon){
 			});
 			
 			dojo.connect(document, "keydown", this, function(evt){
+				if(evt.target.tagName == 'INPUT'){ return; }
 				if(!enabled){ return; }
 				if(evt.keyCode==16){
 					this.shift = true;
@@ -190,6 +191,7 @@ function(dojo, utilCommon){
 				}
 			});
 			dojo.connect(document, "keyup", this, function(evt){
+				if(evt.target.tagName == 'INPUT'){ return; }
 				if(!enabled){ return; }
 				//console.log("KEY UP:", evt.keyCode);
 				var _stop = false;
@@ -230,6 +232,7 @@ function(dojo, utilCommon){
 			});
 			
 			dojo.connect(document, "keypress", this, function(evt){
+				if(evt.target.tagName == 'INPUT'){ return; }
 				if(!enabled){ return; }
 				var inc = this.shift ? this.arrowIncrement*this.arrowShiftIncrement : this.arrowIncrement;
 				
