@@ -131,6 +131,7 @@ var FileInputAuto = declare("dojox.form.FileInputAuto", FileInput,
 	
 		ioIframe.send({
 			url: this.url,
+			method: 'POST',
 			form: _newForm,
 			handleAs: "json",
 			handle: lang.hitch(this,"_handleSend"),
