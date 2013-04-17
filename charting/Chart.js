@@ -1,11 +1,11 @@
 define(["../main", "dojo/_base/lang", "dojo/_base/array","dojo/_base/declare", "dojo/dom-style",
 	"dojo/dom", "dojo/dom-geometry", "dojo/dom-construct","dojo/_base/Color", "dojo/sniff",
 	"./Element", "./SimpleTheme", "./Series", "./axis2d/common", "dojox/gfx/shape",
-	"dojox/gfx", "dojox/lang/functional", "dojox/lang/functional/fold", "dojox/lang/functional/reversed"],
+	"dojox/gfx", "dojo/has!dojo-bidi?./bidi/Chart", "dojox/lang/functional", "dojox/lang/functional/fold", "dojox/lang/functional/reversed"],
 	function(dojox, lang, arr, declare, domStyle,
 	 		 dom, domGeom, domConstruct, Color, has,
 	 		 Element, SimpleTheme, Series, common, shape,
-	 		 g, func){
+	 		 g, BidiChart, func){
 	/*=====
 	var __ChartCtorArgs = {
 		// summary:
@@ -51,7 +51,7 @@ define(["../main", "dojo/_base/lang", "dojo/_base/array","dojo/_base/declare", "
 		makeDirty = func.lambda("item.dirty = true"),
 		getName = func.lambda("item.name");
 
-	var Chart = declare("dojox.charting.Chart", null, {
+	var Chart = declare(has("dojo-bidi")? "dojox.charting.NonBidiChart" : "dojox.charting.Chart", null, {
 		// summary:
 		//		The main chart object in dojox.charting.  This will create a two dimensional
 		//		chart based on dojox.gfx.
@@ -148,6 +148,9 @@ define(["../main", "dojo/_base/lang", "dojo/_base/array","dojo/_base/declare", "
 		//		The main graphics surface upon which a chart is drawn.
 		// dirty: Boolean
 		//		A boolean flag indicating whether or not the chart needs to be updated/re-rendered.
+		// htmlLabels: Boolean
+		//		A boolean flag indicating whether or not it should try to use HTML-based labels for the title or not.
+		//		The default is true.  The only caveat is IE and Opera browsers will always use GFX-based labels.
 
 		constructor: function(/* DOMNode */node, /* __ChartCtorArgs? */kwArgs){
 			// summary:
@@ -167,6 +170,10 @@ define(["../main", "dojo/_base/lang", "dojo/_base/array","dojo/_base/declare", "
 			this.titleFont = kwArgs.titleFont;
 			this.titleFontColor = kwArgs.titleFontColor;
 			this.chartTitle = null;
+			this.htmlLabels = true;
+			if("htmlLabels" in kwArgs){
+				this.htmlLabels = kwArgs.htmlLabels;
+			}
 
 			// default initialization
 			this.theme = null;
@@ -799,6 +806,7 @@ define(["../main", "dojo/_base/lang", "dojo/_base/array","dojo/_base/declare", "
 			// assign series
 			arr.forEach(this.series, function(run){
 				if(!(run.plot in this.plots)){
+					// TODO remove auto-assignment
 					if(!dc.plot2d || !dc.plot2d.Default){
 						throw Error("Can't find plot: Default - didn't you forget to dojo" + ".require() it?");
 					}
@@ -828,10 +836,10 @@ define(["../main", "dojo/_base/lang", "dojo/_base/array","dojo/_base/declare", "
 			// assumption: we don't have stacked axes yet
 			var offsets = this.offsets = {l: 0, r: 0, t: 0, b: 0};
 			// chart mirroring starts
-			var isRTL = this.isRightToLeft ? this.isRightToLeft() : false;
+			var self = this;
 			func.forIn(this.axes, function(axis){
-				if(axis.vertical && isRTL){
-					axis.opt.leftBottom = !axis.opt.leftBottom;
+				if(has("dojo-bidi")){
+					self._resetLeftBottom(axis);
 				}
 				func.forIn(axis.getOffsets(), function(o, i){ offsets[i] = Math.max(o, offsets[i]); });
 			});
@@ -914,8 +922,11 @@ define(["../main", "dojo/_base/lang", "dojo/_base/array","dojo/_base/declare", "
 			func.forIn(this.axes, purge);
 			arr.forEach(this.stack,  purge);
 			var children = this.surface.children;
-			for(var i = 0; i < children.length;++i){
-				shape.dispose(children[i]);
+			// starting with 1.9 the registry is optional and thus dispose is
+			if(shape.dispose){
+				for(var i = 0; i < children.length;++i){
+					shape.dispose(children[i]);
+				}
 			}
 			if(this.chartTitle && this.chartTitle.tagName){
 				// destroy title if it is a DOM node
@@ -942,8 +953,8 @@ define(["../main", "dojo/_base/lang", "dojo/_base/array","dojo/_base/declare", "
 
 			//create title: Whether to make chart title as a widget which extends dojox.charting.Element?
 			if(this.title){
-				var forceHtmlLabels = (g.renderer == "canvas"),
-					labelType = forceHtmlLabels || !has("ie") && !has("opera") ? "html" : "gfx",
+				var forceHtmlLabels = (g.renderer == "canvas") && this.htmlLabels,
+					labelType = forceHtmlLabels || !has("ie") && !has("opera") && this.htmlLabels ? "html" : "gfx",
 					tsize = g.normalizedLength(g.splitFontString(this.titleFont).size);
 				this.chartTitle = common.createText[labelType](
 					this,
@@ -1146,6 +1157,13 @@ define(["../main", "dojo/_base/lang", "dojo/_base/array","dojo/_base/declare", "
 					plot.dirty = true;
 				}
 			}
+		},
+		setDir : function(dir){
+			return this; 
+		},
+		_resetLeftBottom: function(axis){
+		},
+		formatTruncatedLabel: function(element, label, labelType){			
 		}
 	});
 
@@ -1198,5 +1216,5 @@ define(["../main", "dojo/_base/lang", "dojo/_base/array","dojo/_base/declare", "
 		});
 	}
 	
-	return Chart;
+	return has("dojo-bidi")? declare("dojox.charting.Chart", [Chart, BidiChart]) : Chart;
 });

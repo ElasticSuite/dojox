@@ -2,10 +2,11 @@ define([
 	"dojo/_base/array",
 	"dojo/_base/declare",
 	"dojo/_base/lang",
-	"dojo/_base/sniff",
+	"dojo/sniff",
 	"dojo/dom",
 	"dojo/dom-class",
 	"dojo/dom-construct",
+	"dojo/dom-attr",
 	"dijit/_Contained",
 	"dijit/_Container",
 	"dijit/_WidgetBase",
@@ -14,7 +15,7 @@ define([
 	"./_css3",
 	"require",
 	"dojo/has!dojo-bidi?dojox/mobile/bidi/Accordion"
-], function(array, declare, lang, has, dom, domClass, domConstruct, Contained, Container, WidgetBase, iconUtils, lazyLoadUtils, css3, require, BidiAccordion){
+], function(array, declare, lang, has, dom, domClass, domConstruct, domAttr, Contained, Container, WidgetBase, iconUtils, lazyLoadUtils, css3, require, BidiAccordion){
 
 	// module:
 	//		dojox/mobile/Accordion
@@ -66,9 +67,9 @@ define([
 			this.inherited(arguments);
 
 			var a = this.anchorNode = domConstruct.create("a", {
-				className: "mblAccordionTitleAnchor"
+				className: "mblAccordionTitleAnchor",
+				role: "presentation"
 			}, this.domNode);
-			a.href = "javascript:void(0)"; // for a11y
 
 			// text box
 			this.textBoxNode = domConstruct.create("div", {className:"mblAccordionTitleTextBox"}, a);
@@ -76,12 +77,14 @@ define([
 				className: "mblAccordionTitleLabel",
 				innerHTML: this._cv ? this._cv(this.label) : this.label
 			}, this.textBoxNode);
-
 			this._isOnLine = this.inheritParams();
+
+			domAttr.set(this.textBoxNode, "role", "tab"); // A11Y
+			domAttr.set(this.textBoxNode, "tabindex", "0");
 		},
 
 		postCreate: function(){
-			this._clickHandle = this.connect(this.domNode, "onclick", "_onClick");
+			this.connect(this.domNode, "onclick", "_onClick");
 			dom.setSelectable(this.domNode, false);
 		},
 
@@ -176,11 +179,13 @@ define([
 
 	var Accordion = declare(has("dojo-bidi") ? "dojox.mobile.NonBidiAccordion" : "dojox.mobile.Accordion", [WidgetBase, Container, Contained], {
 		// summary:
-		//		A layout widget that allows the user to freely navigate between panes.
+		//		A container widget that can display a group of child panes in a stacked format.
 		// description:
-		//		Accordion has no specific child widget. Any widgets can be its
-		//		child. Typically dojox/mobile/Pane, dojox/mobile/Container,
-		//		or dojox/mobile/ContentPane are used as child widgets.
+		//		Typically, dojox/mobile/Pane, dojox/mobile/Container, or dojox/mobile/ContentPane are 
+		//		used as child widgets, but Accordion requires no specific child widget. 
+		//		Accordion supports three modes for opening child panes: multiselect, fixed-height,
+		//		and single-select. Accordion can have rounded corners, and it can lazy-load the 
+		//		content modules.
 
 		// iconBase: String
 		//		The default icon path for child widgets.
@@ -221,6 +226,12 @@ define([
 		// _openSpace: [private] Number|String 
 		_openSpace: 1,
 
+		buildRendering: function(){
+			this.inherited(arguments);
+			domAttr.set(this.domNode, "role", "tablist"); // A11Y
+			domAttr.set(this.domNode, "aria-multiselectable", !this.singleOpen); // A11Y
+		},
+		
 		startup: function(){
 			if(this._started){ return; }
 
@@ -236,10 +247,13 @@ define([
 			var children = this.getChildren();
 			array.forEach(children, this._setupChild, this);
 			var sel;
+			var posinset = 1;
 			array.forEach(children, function(child){
 				child.startup();
 				child._at.startup();
 				this.collapse(child, true);
+				domAttr.set(child._at.textBoxNode, "aria-setsize", children.length);
+				domAttr.set(child._at.textBoxNode, "aria-posinset", posinset++);
 				if(child.selected){
 					sel = child;
 				}
@@ -252,7 +266,7 @@ define([
 			}else{
 				this._updateLast();
 			}
-			setTimeout(lang.hitch(this, function(){ this.resize(); }), 0);
+			this.defer(function(){ this.resize(); });
 
 			this._started = true;
 		},
@@ -274,6 +288,9 @@ define([
 			});
 			domConstruct.place(child._at.domNode, child.domNode, "before");
 			domClass.add(child.domNode, "mblAccordionPane");
+			domAttr.set(child._at.textBoxNode, "aria-controls", child.domNode.id); // A11Y
+			domAttr.set(child.domNode, "role", "tabpanel"); // A11Y
+			domAttr.set(child.domNode, "aria-labelledby", child._at.id); // A11Y
 		},
 
 		addChild: function(/*Widget*/ widget, /*int?*/ insertIndex){
@@ -283,13 +300,14 @@ define([
 				widget._at.startup();
 				if(widget.selected){
 					this.expand(widget, true);
-					setTimeout(function(){
+					this.defer(function(){
 						widget.domNode.style.height = "";
-					}, 0);
+					});
 				}else{
 					this.collapse(widget);
 				}
 			}
+			this._addChildAriaAttrs();
 		},
 
 		removeChild: function(/*Widget|int*/ widget){
@@ -300,6 +318,16 @@ define([
 				widget._at.destroy();
 			}
 			this.inherited(arguments);
+			this._addChildAriaAttrs();
+		},
+		
+		_addChildAriaAttrs: function(){
+			var posinset = 1;
+			var children = this.getChildren();
+			array.forEach(children, function(child){
+				domAttr.set(child._at.textBoxNode, "aria-posinset", posinset++);
+				domAttr.set(child._at.textBoxNode, "aria-setsize", children.length);
+			});
 		},
 
 		getChildren: function(){
@@ -368,15 +396,17 @@ define([
 							c.domNode.style.height = "0px";
 						}
 					}
-					setTimeout(function(){ // necessary for webkitTransition to work
+					this.defer(function(){ // necessary for webkitTransition to work
 						c.domNode.style.height = h + "px";
-					}, 0);
+					});
 					this.select(pane);
 				}else if(this.singleOpen){
 					this.collapse(c, noAnimation);
 				}
 			}, this);
 			this._updateLast();
+			domAttr.set(pane.domNode, "aria-expanded", "true"); // A11Y
+			domAttr.set(pane.domNode, "aria-hidden", "false"); // A11Y
 		},
 
 		collapse: function(/*Widget*/pane, /*boolean*/noAnimation){
@@ -396,7 +426,7 @@ define([
 				// Adding a webkitTransitionEnd handler to panes may cause conflict
 				// when the panes already have the one. (e.g. ScrollableView)
 				var _this = this;
-				setTimeout(function(){
+				_this.defer(function(){
 					pane.domNode.style.display = "none";
 					_this._updateLast();
 
@@ -415,6 +445,8 @@ define([
 				}, this.duration*1000);
 			}
 			this.deselect(pane);
+			domAttr.set(pane.domNode, "aria-expanded", "false"); // A11Y
+			domAttr.set(pane.domNode, "aria-hidden", "true"); // A11Y
 		},
 
 		select: function(/*Widget*/pane){
@@ -423,6 +455,7 @@ define([
 			// pane:
 			//		A pane widget to highlight.
 			pane._at.set("selected", true);
+			domAttr.set(pane._at.textBoxNode, "aria-selected", "true"); // A11Y
 		},
 
 		deselect: function(/*Widget*/pane){
@@ -431,6 +464,7 @@ define([
 			// pane:
 			//		A pane widget to unhighlight.
 			pane._at.set("selected", false);
+			domAttr.set(pane._at.textBoxNode, "aria-selected", "false"); // A11Y
 		}
 	});
 	
@@ -469,5 +503,5 @@ define([
 	// This is for the benefit of the parser.   Remove for 2.0.  Also, hide from doc viewer.
 	lang.extend(WidgetBase, /*===== {} || =====*/ Accordion.ChildWidgetProperties);
 
-	return has("dojo-bidi") ? declare("dojox.mobile.Accordion", [Accordion, BidiAccordion]) : Accordion;	
+	return has("dojo-bidi") ? declare("dojox.mobile.Accordion", [Accordion, BidiAccordion]) : Accordion;
 });

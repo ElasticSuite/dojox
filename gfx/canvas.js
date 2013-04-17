@@ -1,6 +1,6 @@
 define(["./_base", "dojo/_base/lang", "dojo/_base/array", "dojo/_base/declare", "dojo/_base/window", "dojo/dom-geometry",
-		"dojo/dom", "./_base", "./shape", "./path", "./arc", "./matrix", "./decompose", "./bezierutils"],
-function(g, lang, arr, declare, win, domGeom, dom, gfxBase, gs, pathLib, ga, m, decompose, bezierUtils ){
+		"dojo/dom", "./shape", "./path", "./arc", "./matrix", "./decompose", "./bezierutils"],
+function(g, lang, arr, declare, win, domGeom, dom, gs, pathLib, ga, m, decompose, bezierUtils ){
 	var canvas = g.canvas = {
 		// summary:
 		//		This the graphics rendering bridge for W3C Canvas compliant browsers.
@@ -249,6 +249,7 @@ function(g, lang, arr, declare, win, domGeom, dom, gfxBase, gs, pathLib, ga, m, 
 
 		// events are not implemented
 		getEventSource: function(){ return null; },
+		on:				function(){},
 		connect:		function(){},
 		disconnect:		function(){},
 
@@ -262,7 +263,7 @@ function(g, lang, arr, declare, win, domGeom, dom, gfxBase, gs, pathLib, ga, m, 
 				return this;
 			}
 			this.canvasClip = clip ? makeClip(clipType, clip) : null;
-			this.surface.makeDirty();
+			if(this.parent){this.parent._makeDirty();}
 			return this;
 		}
 	});
@@ -304,13 +305,13 @@ function(g, lang, arr, declare, win, domGeom, dom, gfxBase, gs, pathLib, ga, m, 
 		var old = shape.prototype[method];
 		shape.prototype[method] = extra ?
 			function(){
-				this.surface.makeDirty();
+				if(this.parent){this.parent._makeDirty();}
 				old.apply(this, arguments);
 				extra.call(this);
 				return this;
 			} :
 			function(){
-				this.surface.makeDirty();
+				if(this.parent){this.parent._makeDirty();}
 				return old.apply(this, arguments);
 			};
 	};
@@ -677,7 +678,7 @@ function(g, lang, arr, declare, win, domGeom, dom, gfxBase, gs, pathLib, ga, m, 
 			// summary:
 			//		get the text width in pixels
 			var s = this.shape, w = 0, ctx;
-			if(s.text && s.text.length > 0){
+			if(s.text){
 				ctx = this.surface.rawNode.getContext("2d");
 				ctx.save();
 				this._renderTransform(ctx);
@@ -713,7 +714,7 @@ function(g, lang, arr, declare, win, domGeom, dom, gfxBase, gs, pathLib, ga, m, 
 			// ctx: Object
 			//		the drawing context.
 			var ta, s = this.shape;
-			if(!s.text || s.text.length == 0){
+			if(!s.text){
 				return;
 			}
 			// text align
@@ -738,6 +739,9 @@ function(g, lang, arr, declare, win, domGeom, dom, gfxBase, gs, pathLib, ga, m, 
 		canvas.Text.extend({
 			getTextWidth: function(){
 				return 0;
+			},
+			getBoundingBox: function(){
+				return null;
 			},
 			_renderShape: function(){
 			}
@@ -1133,7 +1137,7 @@ function(g, lang, arr, declare, win, domGeom, dom, gfxBase, gs, pathLib, ga, m, 
 		makeDirty: function(){
 			// summary:
 			//		internal method, which is called when we may need to redraw
-			if(!this.pendingImagesCount && !("pendingRender" in this)){
+			if(!this.pendingImagesCount && !("pendingRender" in this) && !this._batch){
 				this.pendingRender = setTimeout(lang.hitch(this, this._render), 0);
 			}
 		},
@@ -1172,7 +1176,8 @@ function(g, lang, arr, declare, win, domGeom, dom, gfxBase, gs, pathLib, ga, m, 
 		// events are not implemented
 		getEventSource: function(){ return null; },
 		connect:		function(){},
-		disconnect:		function(){}
+		disconnect:		function(){},
+		on:				function(){}
 	});
 
 	canvas.createSurface = function(parentNode, width, height){
@@ -1214,25 +1219,49 @@ function(g, lang, arr, declare, win, domGeom, dom, gfxBase, gs, pathLib, ga, m, 
 	// Extenders
 
 	var C = gs.Container, Container = {
+		openBatch: function() {
+			// summary:
+			//		starts a new batch, subsequent new child shapes will be held in
+			//		the batch instead of appending to the container directly.
+			// description:
+			//		Because the canvas renderer has no DOM hierarchy, the canvas implementation differs
+			//		such that it suspends the repaint requests for this container until the current batch is closed by a call to closeBatch().
+			++this._batch;
+			return this;
+		},
+		closeBatch: function() {
+			// summary:
+			//		submits the current batch.
+			// description:
+			//		On canvas, this method flushes the pending redraws queue.
+			this._batch = this._batch > 0 ? --this._batch : 0;
+			this._makeDirty();
+			return this;
+		},
+		_makeDirty: function(){
+			if(!this._batch){
+				this.surface.makeDirty();
+			}
+		},
 		add: function(shape){
-			this.surface.makeDirty();
+			this._makeDirty();
 			return C.add.apply(this, arguments);
 		},
 		remove: function(shape, silently){
-			this.surface.makeDirty();
+			this._makeDirty();
 			return C.remove.apply(this, arguments);
 		},
 		clear: function(){
-			this.surface.makeDirty();
+			this._makeDirty();
 			return C.clear.apply(this, arguments);
 		},
 		getBoundingBox: C.getBoundingBox,
 		_moveChildToFront: function(shape){
-			this.surface.makeDirty();
+			this._makeDirty();
 			return C._moveChildToFront.apply(this, arguments);
 		},
 		_moveChildToBack: function(shape){
-			this.surface.makeDirty();
+			this._makeDirty();
 			return C._moveChildToBack.apply(this, arguments);
 		}
 	};

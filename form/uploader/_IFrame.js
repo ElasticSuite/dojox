@@ -1,10 +1,12 @@
 define([
+	"dojo/query",
 	"dojo/dom-construct",
 	"dojo/_base/declare",
 	"dojo/_base/lang",
 	"dojo/_base/array",
+	"dojo/dom-form",
 	"dojo/request/iframe"
-],function(domConstruct, declare, lang, arrayUtil, request){
+],function(query, domConstruct, declare, lang, arrayUtil, domForm, request){
 	
 
 	return declare("dojox.form.uploader._IFrame", [], {
@@ -30,27 +32,44 @@ define([
 			//		Internal. You could use this, but you should use upload() or submit();
 			//		which can also handle the post data.
 	
-			var form, destroyAfter = false;
+			var
+				formObject = {},
+				sendForm,
+				form = this.getForm(),
+				url = this.getUrl(),
+				self = this;
+			data = data || {};
 			data.uploadType = this.uploadType;
-			if(!this.getForm()){
-				//enctype can't be changed once a form element is created
-				form = domConstruct.place('<form enctype="multipart/form-data" method="post"></form>', this.domNode);
-				arrayUtil.forEach(this._inputs, function(n, i){
-					if(n.value) form.appendChild(n);
-				}, this);
-				destroyAfter = true;
-			}else{
-				form = this.form;
+			
+			// create a temp form for which to send data
+			//enctype can't be changed once a form element is created
+			sendForm = domConstruct.place('<form enctype="multipart/form-data" method="post"></form>', this.domNode);
+			arrayUtil.forEach(this._inputs, function(n, i){
+				// don't send blank inputs
+				if(n.value !== ''){
+					sendForm.appendChild(n);
+					formObject[n.name] = n.value;
+				}
+			}, this);
+			
+			
+			// add any extra data as form inputs		
+			if(data){
+				//formObject = domForm.toObject(form);
+				for(nm in data){
+					if(formObject[nm] === undefined){
+						domConstruct.create('input', {name:nm, value:data[nm], type:'hidden'}, sendForm);
+					}
+				}
 			}
 	
-			var url = this.getUrl();
-			var self = this;
+			
 			request.post(url, {
-				form: form,
+				form: sendForm,
 				handleAs: "json",
 				content: data
 			}).then(function(result){
-				if(destroyAfter){ domConstruct.destroy(form); }
+				domConstruct.destroy(sendForm);
 				if(data["ERROR"] || data["error"]){
 					self.onError(result);
 				}else{
@@ -58,7 +77,7 @@ define([
 				}
 			}, function(err){
 				console.error('error parsing server result', err);
-				if(destroyAfter){ domConstruct.destroy(form); }
+				domConstruct.destroy(sendForm); 
 				self.onError(err);
 			});
 		}

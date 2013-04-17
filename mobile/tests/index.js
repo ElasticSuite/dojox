@@ -44,7 +44,8 @@ var categories = [
 	{ tag: "misc", label: "misc"},
 	{ tag: "pageTurn", label: "pageTurn"},
 	{ tag: "transition", label: "transition"},
-	{ tag: "FilteredLists", label: "FilteredLists"}
+	{ tag: "FilteredLists", label: "FilteredLists"},
+	{ tag: "TemplatedWidgets", label: "TemplatedWidgets"}
 ];
 var tests = [
 	{ url: "test_Accordion-demo.html", tags: "Accordion" },
@@ -62,10 +63,12 @@ var tests = [
 	{ url: "test_DataCarousel-demo.html", tags: "DataCarousel" },
 	{ url: "test_DataCarousel.html", tags: "DataCarousel" },
 	{ url: "test_DatePicker.html", tags: "DatePicker" },
+	{ url: "test_DatePicker2.html", tags: "DatePicker" },
 	{ url: "test_EdgeToEdgeCategory.html", tags: "EdgeToEdgeCategory" },
 	{ url: "test_EdgeToEdgeDataList-auto-sv.html", tags: "EdgeToEdgeDataList" },
 	{ url: "test_EdgeToEdgeDataList-auto-v.html", tags: "EdgeToEdgeDataList" },
 	{ url: "test_EdgeToEdgeDataList-itemMap.html", tags: "EdgeToEdgeDataList"},
+	{ url: "test_EdgeToEdgeDataList-lazy.html", tags: "EdgeToEdgeDataList"},
 	{ url: "test_EdgeToEdgeDataList-more-sv.html", tags: "EdgeToEdgeDataList" },
 	{ url: "test_EdgeToEdgeDataList-more-v.html", tags: "EdgeToEdgeDataList" },
 	{ url: "test_EdgeToEdgeDataList.html", tags: "EdgeToEdgeDataList" },
@@ -80,6 +83,7 @@ var tests = [
 	{ url: "test_EdgeToEdgeStoreList-auto-v.html", tags: "EdgeToEdgeStoreList" },
 	{ url: "test_EdgeToEdgeStoreList-categ.html", tags: "EdgeToEdgeStoreList" },
 	{ url: "test_EdgeToEdgeStoreList-itemMap.html", tags: "EdgeToEdgeStoreList"},
+	{ url: "test_EdgeToEdgeStoreList-lazy.html", tags: "EdgeToEdgeStoreList"},
 	{ url: "test_EdgeToEdgeStoreList-more-sv.html", tags: "EdgeToEdgeStoreList" },
 	{ url: "test_EdgeToEdgeStoreList-more-v.html", tags: "EdgeToEdgeStoreList" },
 	{ url: "test_EdgeToEdgeStoreList.html", tags: "EdgeToEdgeStoreList" },
@@ -94,6 +98,7 @@ var tests = [
 	{ url: "test_FixedSplitter-V3.html", tags: "FixedSplitter" },
 	{ url: "test_FixedSplitter-orientation.html", tags: "FixedSplitter" },
 	{ url: "test_FormControls.html", tags: "FormControls" },
+	{ url: "test_FormLayout.html", tags: "FormControls"},
 	{ url: "test_GridLayout-2cols.html", tags: "GridLayout"},
 	{ url: "test_GridLayout-3cols.html", tags: "GridLayout"},
 	{ url: "test_GridLayout-change.html", tags: "GridLayout"},
@@ -185,8 +190,12 @@ var tests = [
 	{ url: "test_ScrollableView-v-vh-vf.html", tags: "ScrollableView" },
 	{ url: "test_ScrollableView-v-vh.html", tags: "ScrollableView" },
 	{ url: "test_ScrollableView-v.html", tags: "ScrollableView" },
+	{ url: "test_ScrollableView-scrollEvents.html", tags: "ScrollableView" },
+	{ url: "test_ScrollableView-pullToRefresh.html", tags: "ScrollableView" },
+	{ url: "test_ScrollableView-fixedFooters.html", tags: "ScrollableView" },
 	{ url: "test_SimpleDialog-large.html", tags: "SimpleDialog" },
 	{ url: "test_SimpleDialog-load.html", tags: "SimpleDialog" },
+	{ url: "test_SimpleDialog-spinWheel.html", tags: "SimpleDialog" },
 	{ url: "test_SimpleDialog.html", tags: "SimpleDialog" },
 	{ url: "test_Slider.html", tags: "FormControls" },
 	{ url: "test_SpinWheel-1slot.html", tags: "SpinWheel" },
@@ -206,6 +215,7 @@ var tests = [
 	{ url: "test_SwapView-demo.html", tags: "SwapView" },
 	{ url: "test_SwapView-slideshow.html", tags: "SwapView" },
 	{ url: "test_SwapView.html", tags: "SwapView" },
+	{ url: "test_SwapView-show.html", tags: "SwapView" },
 	{ url: "test_Switch-setter.html", tags: "Switch" },
 	{ url: "test_Switch.html", tags: "Switch" },
 	{ url: "test_TabBar-badge.html", tags: "TabBar" },
@@ -277,6 +287,7 @@ var tests = [
 	{ url: "test_phone-settings.html", tags: "misc" },
 	{ url: "test_tablet-settings.html", tags: "misc" },
 	{ url: "test_theme-switch.html", tags: "misc" },
+	{ url: "test_theme-iOS6.html", tags: "misc" },
 	{ url: "test_transition-animations-extended1.html", tags: "transition" },
 	{ url: "test_transition-animations-extended2.html", tags: "transition" },
 	{ url: "test_transition-animations-extended3.html", tags: "transition" },
@@ -294,5 +305,7 @@ var tests = [
 	{ url: "test_FilteredList-EdgeToEdgeStoreList-prog.html", tags: "FilteredLists" },
 	{ url: "test_FilteredList-EdgeToEdgeStoreList-simple.html", tags: "FilteredLists" },
 	{ url: "test_FilteredList-RoundRectList-auto.html", tags: "FilteredLists" },
-	{ url: "test_FilteredList-RoundRectList-demo.html", tags: "FilteredLists" }
+	{ url: "test_FilteredList-RoundRectList-demo.html", tags: "FilteredLists" },
+	{ url: "test_LongListMixin.html", tags: "ScrollableView" },
+	{ url: "test_Templated-widgets.html", tags: "TemplatedWidgets" }
 ];

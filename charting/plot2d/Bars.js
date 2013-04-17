@@ -1,6 +1,6 @@
-define(["dojo/_base/lang", "dojo/_base/array", "dojo/_base/declare", "./CartesianBase", "./_PlotEvents", "./common",
+define(["dojo/_base/lang", "dojo/_base/array", "dojo/_base/declare", "dojo/has", "./CartesianBase", "./_PlotEvents", "./common",
 	"dojox/gfx/fx", "dojox/lang/utils", "dojox/lang/functional", "dojox/lang/functional/reversed"], 
-	function(lang, arr, declare, CartesianBase, _PlotEvents, dc, fx, du, df, dfr){
+	function(lang, arr, declare, has, CartesianBase, _PlotEvents, dc, fx, du, df, dfr){
 		
 	/*=====
 	declare("dojox.charting.plot2d.__BarCtorArgs", dojox.charting.plot2d.__DefaultCtorArgs, {
@@ -30,6 +30,11 @@ define(["dojo/_base/lang", "dojo/_base/array", "dojo/_base/declare", "./Cartesia
 		// fill: dojox.gfx.Fill?
 		//		Any fill to be used for elements on the plot.
 		fill:		{},
+
+		// filter: dojox.gfx.Filter?
+	 	//		An SVG filter to be used for elements on the plot. gfx SVG renderer must be used and dojox/gfx/svgext must
+	 	//		be required for this to work.
+	 	filter:		{},
 
 		// styleFunc: Function?
 		//		A function that returns a styling object for the a given data item.
@@ -67,6 +72,7 @@ define(["dojo/_base/lang", "dojo/_base/array", "dojo/_base/declare", "./Cartesia
 			outline:	{},
 			shadow:		{},
 			fill:		{},
+			filter:	    {},
 			styleFunc:  null,
 			font:		"",
 			fontColor:	""
@@ -212,6 +218,9 @@ define(["dojo/_base/lang", "dojo/_base/array", "dojo/_base/declare", "./Cartesia
 							var specialFill = this._plotFill(finalTheme.series.fill, dim, offsets);
 							specialFill = this._shapeFill(specialFill, rect);
 							var shape = this.createRect(run, s, rect).setFill(specialFill).setStroke(finalTheme.series.stroke);
+							if(shape.setFilter && finalTheme.series.filter){
+								shape.setFilter(finalTheme.series.filter);
+							}
 							run.dyn.fill   = shape.getFill();
 							run.dyn.stroke = shape.getStroke();
 							if(events){
@@ -247,8 +256,8 @@ define(["dojo/_base/lang", "dojo/_base/array", "dojo/_base/declare", "./Cartesia
 			}
 			this.dirty = false;
 			// chart mirroring starts
-			if(this.chart.isRightToLeft && this.chart.isRightToLeft()){
-				this.chart.applyMirroring(this.group, dim, offsets);
+			if(has("dojo-bidi")){
+				this._checkOrientation(this.group, dim, offsets);
 			}
 			// chart mirroring ends
 			return this;	//	dojox/charting/plot2d/Bars

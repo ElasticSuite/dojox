@@ -1,7 +1,7 @@
 define(["dojo/_base/lang", "dojo/_base/array" ,"dojo/_base/declare", 
 		"./Base", "./_PlotEvents", "./common",
-		"dojox/gfx", "dojox/gfx/matrix", "dojox/lang/functional", "dojox/lang/utils"],
-	function(lang, arr, declare, Base, PlotEvents, dc, g, m, df, du){
+		"dojox/gfx", "dojox/gfx/matrix", "dojox/lang/functional", "dojox/lang/utils","dojo/has"],
+	function(lang, arr, declare, Base, PlotEvents, dc, g, m, df, du, has){
 
 	/*=====
 	declare("dojox.charting.plot2d.__PieCtorArgs", dojox.charting.plot2d.__DefaultCtorArgs, {
@@ -64,6 +64,11 @@ define(["dojo/_base/lang", "dojo/_base/array" ,"dojo/_base/declare",
 		//		Any fill to be used for elements on the plot.
 		fill:		{},
 
+		// filter: dojox.gfx.Filter?
+		//		An SVG filter to be used for elements on the plot. gfx SVG renderer must be used and dojox/gfx/svgext must
+		//		be required for this to work.
+		filter:		{},
+
 		// styleFunc: Function?
 		//		A function that returns a styling object for the a given data item.
 		styleFunc:	null
@@ -95,6 +100,7 @@ define(["dojo/_base/lang", "dojo/_base/array" ,"dojo/_base/declare",
 			outline:	{},
 			shadow:		{},
 			fill:		{},
+			filter:     {},
 			styleFunc:	null,
 			font:		"",
 			fontColor:	"",
@@ -198,6 +204,9 @@ define(["dojo/_base/lang", "dojo/_base/array" ,"dojo/_base/declare",
 				scircle.cx += shadow.dx;
 				scircle.cy += shadow.dy;
 				s.createCircle(scircle).setFill(shadow.color).setStroke(shadow);
+			}
+			if(s.setFilter && (this.opt.filter || t.filter)){
+				s.createCircle(circle).setFill(t.series.stroke).setFilter(this.opt.filter || t.filter);
 			}
 
 			if(typeof run[0] == "number"){
@@ -381,6 +390,7 @@ define(["dojo/_base/lang", "dojo/_base/array" ,"dojo/_base/declare",
 			}, this);
 			// draw labels
 			if(this.opt.labels){
+				var isRtl = has("dojo-bidi") && this.chart.isRightToLeft(); 
 				if(this.opt.labelStyle == "default"){ // inside or outside based on labelOffset
 					start = startAngle;
 					arr.some(slices, function(slice, i){
@@ -406,7 +416,7 @@ define(["dojo/_base/lang", "dojo/_base/array" ,"dojo/_base/declare",
 							x = circle.cx + labelR * Math.cos(labelAngle),
 							y = circle.cy + labelR * Math.sin(labelAngle) + size / 2;
 						// draw the label
-						this.renderLabel(s, x, y, labels[i], theme, this.opt.labelOffset > 0);
+						this.renderLabel(s, isRtl ? dim.width - x : x, y, labels[i], theme, this.opt.labelOffset > 0);
 						start = end;
 						return false;	// continue
 					}, this);
@@ -448,7 +458,7 @@ define(["dojo/_base/lang", "dojo/_base/array" ,"dojo/_base/declare",
 								wiring.lineTo(x, y);
 							}
 							wiring.lineTo(jointX, y).setStroke(slice.theme.series.labelWiring);
-							this.renderLabel(s, labelX, y, labels[i], slice.theme, false, "left");
+							this.renderLabel(s, isRtl ? dim.width - labelWidth - labelX : labelX, y, labels[i], slice.theme, false, "left");
 						}
 					},this);
 				}
@@ -458,9 +468,13 @@ define(["dojo/_base/lang", "dojo/_base/array" ,"dojo/_base/declare",
 			this._eventSeries[this.run.name] = df.map(run, function(v){
 				return v <= 0 ? null : eventSeries[esi++];
 			});
+			// chart mirroring starts
+			if(has("dojo-bidi")){
+				this._checkOrientation(this.group, dim, offsets);
+			}
+			// chart mirroring ends
 			return this;	//	dojox/charting/plot2d/Pie
 		},
-		
 		_getProperLabelRadius: function(slices, labelHeight, minRidius){
 			var leftCenterSlice, rightCenterSlice,
 				leftMinSIN = 1, rightMinSIN = 1;

@@ -2,7 +2,7 @@ define([
 	"dojo/_base/declare",
 	"dojo/_base/event",
 	"dojo/_base/lang",
-	"dojo/_base/sniff",
+	"dojo/sniff",
 	"dojo/_base/window",
 	"dojo/dom-class",
 	"dojo/dom-construct",
@@ -147,7 +147,7 @@ define([
 			}
 
 			this._dragstartHandle = this.connect(this.domNode, "ondragstart", event.stop);
-			this._keydownHandle = this.connect(this.domNode, "onkeydown", "_onClick"); // for desktop browsers
+			this.connect(this.domNode, "onkeydown", "_onClick"); // for desktop browsers
 		},
 
 		highlight: function(/*Number?*/timeout){
@@ -157,7 +157,7 @@ define([
 			timeout = (timeout !== undefined) ? timeout : this.timeout;
 			if(timeout > 0){
 				var _this = this;
-				setTimeout(function(){
+				_this.defer(function(){
 					_this.unhighlight();
 				}, timeout*1000);
 			}
@@ -200,9 +200,9 @@ define([
 		_prepareForTransition: function(e, transOpts){
 			// Override from _ItemBase
 			if(transOpts){
-				setTimeout(lang.hitch(this, function(d){
+				this.defer(function(d){
 					this.set("selected", false);
-				}), 1500);
+				}, 1500);
 				return true;
 			}else{
 				if(this.getParent().transition === "below" && this.isOpen()){
@@ -222,7 +222,7 @@ define([
 			if(e){
 				if(e.type === "keydown" && e.keyCode !== 13){ return; }
 				if(this.closeIconClicked(e) === false){ return; } // user's click action
-				setTimeout(lang.hitch(this, function(d){ this._closeIconClicked(); }), 0);
+				this.defer(function(d){ this._closeIconClicked(); });
 				return;
 			}
 			this.close();
@@ -404,5 +404,5 @@ define([
 		}
 	});
 
-	return has("dojo-bidi") ? declare("dojox.mobile.IconItem", [IconItem, BidiIconItem]) : IconItem;		
+	return has("dojo-bidi") ? declare("dojox.mobile.IconItem", [IconItem, BidiIconItem]) : IconItem;
 });

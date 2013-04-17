@@ -6,12 +6,13 @@ define([
 	"dojo/_base/window",
 	"dojo/dom-class",
 	"dojo/dom-construct",
+	"dojo/dom-attr",
 	"dojo/touch",
 	"dijit/_WidgetBase",
 	"./iconUtils",
 	"dojo/has",
 	"dojo/has!dojo-bidi?dojox/mobile/bidi/ValuePickerSlot"
-], function(array, declare, event, lang, win, domClass, domConstruct, touch, WidgetBase, iconUtils, has, BidiValuePickerSlot){
+], function(array, declare, event, lang, win, domClass, domConstruct, domAttr, touch, WidgetBase, iconUtils, has, BidiValuePickerSlot){
 
 	// module:
 	//		dojox/mobile/ValuePickerSlot
@@ -21,14 +22,14 @@ define([
 		//		A widget representing one slot of a ValuePicker widget.
 		
 		// items: Array
-		//		An array of array of key-label pairs.
-		//		(e.g. [[0,"Jan"],[1,"Feb"],...] ) If key values for each label
+		//		An array of array of key-label pairs
+		//		(e.g. [[0, "Jan"], [1,"Feb"], ...]). If key values for each label
 		//		are not necessary, labels can be used instead.
 		items: [],
 
 		// labels: String[]
-		//		An array of labels to be displayed on the value picker.
-		//		(e.g. ["Jan","Feb",...] ) This is a simplified version of the
+		//		An array of labels to be displayed on the value picker
+		//		(e.g. ["Jan","Feb",...]). This is a simplified version of the
 		//		items property.
 		labels: [],
 
@@ -56,8 +57,10 @@ define([
 		//		The steps between labelFrom and labelTo.
 		step: 1,
 
-		// readOnly: Boolean
+		// readOnly: [const] Boolean
 		//		A flag used to indicate if the input field is readonly or not.
+		//		Note that changing the value of the property after the widget 
+		//		creation has no effect.
 		readOnly: false,
 
 		// tabIndex: String
@@ -71,6 +74,22 @@ define([
 		/*=====
 		key: null,
 		=====*/
+		
+		// plusBtnLabel: String
+		//		(Accessibility) Text label for plus button
+		plusBtnLabel: "",
+		
+		// plusBtnLabelRef: String
+		//		(Accessibility) Reference to a node id containing text label for plus button
+		plusBtnLabelRef: "",
+		
+		// minusBtnLabel: String
+		//		(Accessibility) Text label for minus button
+		minusBtnLabel: "",
+		
+		// minusBtnLabelRef: String
+		//		(Accessibility) Reference to a node id containing text label for minus button
+		minusBtnLabelRef: "",
 
 		/* internal properties */	
 		baseClass: "mblValuePickerSlot",
@@ -90,6 +109,7 @@ define([
 				className: "mblValuePickerSlotPlusButton mblValuePickerSlotButton",
 				title: "+"
 			}, this.domNode);
+			
 			this.plusIconNode = domConstruct.create("div", {
 				className: "mblValuePickerSlotIcon"
 			}, this.plusBtnNode);
@@ -102,7 +122,7 @@ define([
 				className: "mblValuePickerSlotInput",
 				readonly: this.readOnly
 			}, this.inputAreaNode);
-
+			
 			this.minusBtnNode = domConstruct.create("div", {
 				className: "mblValuePickerSlotMinusButton mblValuePickerSlotButton",
 				title: "-"
@@ -111,6 +131,21 @@ define([
 				className: "mblValuePickerSlotIcon"
 			}, this.minusBtnNode);
 			iconUtils.createIcon("mblDomButtonGrayMinus", null, this.minusIconNode);
+			
+			domAttr.set(this.plusBtnNode, "role", "button"); //a11y
+			this._setPlusBtnLabelAttr(this.plusBtnLabel)
+			this._setPlusBtnLabelRefAttr(this.plusBtnLabelRef);
+			
+			domAttr.set(this.inputNode, "role", "textbox");
+			var registry = require("dijit/registry");
+			var inputAreaNodeId =  registry.getUniqueId("dojo_mobile__mblValuePickerSlotInput");
+			domAttr.set(this.inputNode, "id", inputAreaNodeId);
+			domAttr.set(this.plusBtnNode, "aria-controls", inputAreaNodeId);
+			
+			domAttr.set(this.minusBtnNode, "role", "button");
+			domAttr.set(this.minusBtnNode, "aria-controls", inputAreaNodeId);
+			this._setMinusBtnLabelAttr(this.minusBtnLabel);
+			this._setMinusBtnLabelRefAttr(this.minusBtnLabelRef);
 
 			if(this.value === "" && this.items.length > 0){
 				this.value = this.items[0][1];
@@ -130,6 +165,7 @@ define([
 				}))
 			];
 			this.inherited(arguments);
+			this._set(this.plusBtnLabel);
 		},
 
 		initLabels: function(){
@@ -230,19 +266,19 @@ define([
 			domClass.add(e.currentTarget, "mblValuePickerSlotButtonSelected");
 			this._btn = e.currentTarget;
 			if(this._timer){
-				clearTimeout(this._timer); // fail safe
+				this._timer.remove(); // fail safe
 				this._timer = null;
 			}
 			if(this._interval){
 				clearInterval(this._interval); // fail safe
 				this._interval = null;
 			}
-			this._timer = setTimeout(lang.hitch(this, function(){
+			this._timer = this.defer(function(){
 				this._interval = setInterval(lang.hitch(this, function(){
 					this.spin(this._btn === this.plusBtnNode ? 1 : -1);
 				}), 60);
 				this._timer = null;
-			}), 1000);
+			}, 1000);
 			event.stop(e);
 		},
 
@@ -252,7 +288,7 @@ define([
 			if(Math.abs(x - this.touchStartX) >= 4 ||
 			   Math.abs(y - this.touchStartY) >= 4){ // dojox/mobile/scrollable.threshold
 			   	if(this._timer){
-					clearTimeout(this._timer); // fail safe
+					this._timer.remove(); // fail safe
 					this._timer = null;
 				}
 				if(this._interval){
@@ -266,7 +302,7 @@ define([
 
 		_onTouchEnd: function(e){
 			if(this._timer){
-				clearTimeout(this._timer);
+				this._timer.remove();
 				this._timer = null;
 			}
 			array.forEach(this._conn, this.disconnect, this);
@@ -322,6 +358,30 @@ define([
 		_setTabIndexAttr: function(/*String*/ tabIndex){
 			this.plusBtnNode.setAttribute("tabIndex", tabIndex);
 			this.minusBtnNode.setAttribute("tabIndex", tabIndex);
+		},
+		
+		_setAria: function(node, attr, value){
+			if(value){
+				domAttr.set(node, attr, value);
+			}else{
+				domAttr.remove(node, attr);
+			}
+		},
+		
+		_setPlusBtnLabelAttr: function(/*String*/ plusBtnLabel){
+			this._setAria(this.plusBtnNode, "aria-label", plusBtnLabel);
+		},
+		
+		_setPlusBtnLabelRefAttr: function(/*String*/ plusBtnLabelRef){
+			this._setAria(this.plusBtnNode, "aria-labelledby", plusBtnLabelRef);
+		},
+		
+		_setMinusBtnLabelAttr: function(/*String*/ minusBtnLabel){
+			this._setAria(this.minusBtnNode, "aria-label", minusBtnLabel);
+		},
+		
+		_setMinusBtnLabelRefAttr: function(/*String*/ minusBtnLabelRef){
+			this._setAria(this.minusBtnNode, "aria-labelledby", minusBtnLabelRef);
 		}
 	});
 	

@@ -11,7 +11,7 @@ define([
 	"dijit/_WidgetBase",
 	"./TransitionEvent",
 	"./iconUtils",
-	"./sniff",	
+	"./sniff",
 	"dojo/has!dojo-bidi?dojox/mobile/bidi/_ItemBase"
 ], function(array, declare, lang, win, domClass, touch, registry, Contained, Container, WidgetBase, TransitionEvent, iconUtils, has, BidiItemBase){
 
@@ -186,9 +186,7 @@ define([
 			if(!this._isOnLine){
 				this.inheritParams();
 			}
-			if(this._handleClick && this._selStartMethod === "touch"){
-				this._onTouchStartHandle = this.connect(this.domNode, touch.press, "_onTouchStart");
-			}
+			this._updateHandles();
 			this.inherited(arguments);
 		},
 
@@ -214,6 +212,21 @@ define([
 			return !!parent;
 		},
 
+		_updateHandles: function(){
+			// tags:
+			//		private
+			if(this._handleClick && this._selStartMethod === "touch"){
+				if(!this._onTouchStartHandle){
+					this._onTouchStartHandle = this.connect(this.domNode, touch.press, "_onTouchStart");
+				}
+			}else{
+				if(this._onTouchStartHandle){
+					this.disconnect(this._onTouchStartHandle);
+					this._onTouchStartHandle = null;
+				}
+			}
+		},
+		
 		getTransOpts: function(){
 			// summary:
 			//		Copies from the parent and returns the values of parameters  
@@ -263,9 +276,8 @@ define([
 				if(this._selEndMethod === "touch"){
 					this.set("selected", false);
 				}else if(this._selEndMethod === "timer"){
-					var _this = this;
 					this.defer(function(){
-						_this.set("selected", false);
+						this.set("selected", false);
 					}, this._duration);
 				}
 			}
@@ -321,7 +333,7 @@ define([
 			if(this._delayedSelection){
 				// so as not to make selection when the user flicks on ScrollableView
 				this._selTimer = this.defer(function(){
-					lang.hitch(this, function(){ this.set("selected", true); });
+					this.set("selected", true);
 				}, 100);
 			}else{
 				this.set("selected", true);

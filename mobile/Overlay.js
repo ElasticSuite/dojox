@@ -1,7 +1,7 @@
 define([
 	"dojo/_base/declare",
 	"dojo/_base/lang",
-	"dojo/_base/sniff",
+	"dojo/sniff",
 	"dojo/_base/window",
 	"dojo/dom-class",
 	"dojo/dom-geometry",
@@ -22,6 +22,14 @@ define([
 		// baseClass: String
 		//		The name of the CSS class of this widget.
 		baseClass: "mblOverlay mblOverlayHidden",
+
+		buildRendering: function(){
+			this.inherited(arguments);
+			if(!this.containerNode){
+				// set containerNode so that getChildren() works
+				this.containerNode = this.domNode;
+			}
+		},
 
 		_reposition: function(){
 			// summary:
@@ -56,14 +64,14 @@ define([
 			}
 			var _domNode = this.domNode;
 			domClass.replace(_domNode, ["mblCoverv", "mblIn"], ["mblOverlayHidden", "mblRevealv", "mblOut", "mblReverse", "mblTransition"]);
-			setTimeout(lang.hitch(this, function(){
+			this.defer(function(){
 				var handler = this.connect(_domNode, css3.name("transitionEnd"), function(){
 					this.disconnect(handler);
 					domClass.remove(_domNode, ["mblCoverv", "mblIn", "mblTransition"]);
 					this._reposition();
 				});
 				domClass.add(_domNode, "mblTransition");
-			}), 100);
+			}, 100);
 			var skipReposition = false;
 
 			this._moveHandle = this.connect(win.doc.documentElement, touch.move,
@@ -93,13 +101,13 @@ define([
 			}
 			if(has("css3-animations")){
 				domClass.replace(_domNode, ["mblRevealv", "mblOut", "mblReverse"], ["mblCoverv", "mblIn", "mblOverlayHidden", "mblTransition"]);
-				setTimeout(lang.hitch(this, function(){
+				this.defer(function(){
 					var handler = this.connect(_domNode, css3.name("transitionEnd"), function(){
 						this.disconnect(handler);
 						domClass.replace(_domNode, ["mblOverlayHidden"], ["mblRevealv", "mblOut", "mblReverse", "mblTransition"]);
 					});
 					domClass.add(_domNode, "mblTransition");
-				}), 100);
+				}, 100);
 			}else{
 				domClass.replace(_domNode, ["mblOverlayHidden"], ["mblCoverv", "mblIn", "mblRevealv", "mblOut", "mblReverse"]);
 			}

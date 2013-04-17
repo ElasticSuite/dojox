@@ -25,6 +25,10 @@ define([
 			this.anchor = domConstruct.create("div", {"class":"mblTooltipAnchor"}, this.domNode, "first");
 			this.arrow = domConstruct.create("div", {"class":"mblTooltipArrow"}, this.anchor);
 			this.innerArrow = domConstruct.create("div", {"class":"mblTooltipInnerArrow"}, this.anchor);
+			if(!this.containerNode){
+				// set containerNode so that getChildren() works
+				this.containerNode = this.domNode;
+			}
 		},
 
 		show: function(/*DomNode*/ aroundNode, /*Array*/positions){
@@ -56,8 +60,8 @@ define([
 			domClass.remove(domNode, ["mblTooltipAfter","mblTooltipBefore","mblTooltipBelow","mblTooltipAbove"]);
 			array.forEach(registry.findWidgets(domNode), function(widget){
 				if(widget.height == "auto" && typeof widget.resize == "function"){
-					if(!widget.fixedFooterHeight){
-						widget.fixedFooterHeight = domGeometry.getPadBorderExtents(domNode).b;
+					if(!widget._parentPadBorderExtentsBottom){
+						widget._parentPadBorderExtentsBottom = domGeometry.getPadBorderExtents(domNode).b;
 					}
 					widget.resize();
 				}

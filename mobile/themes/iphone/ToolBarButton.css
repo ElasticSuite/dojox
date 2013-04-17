@@ -26,9 +26,11 @@
 }
 .mblToolBarButtonHasLeftArrow {
   padding-right: 0;
+  padding-left: 10px;
 }
 .mblToolBarButtonHasRightArrow {
   padding-left: 0;
+  padding-right: 10px;
 }
 .mblToolBarButtonArrow {
   position: absolute;
@@ -91,6 +93,7 @@
 }
 .mblToolBarButtonText .mblToolBarButtonLabel {
   padding-right: 10px;
+  height: 29px;
 }
 .mblToolBarButtonHasLeftArrow .mblToolBarButtonIcon {
   padding-left: 4px;
@@ -100,4 +103,8 @@
 }
 .mblToolBarButtonIcon > div {
   height: 29px;
+}
+/* iOS 6 specific */
+.dj_ios6.dj_phone .mblHeading .mblToolBarButtonBody {
+  border-color: #343a42 #425167 #2f4769 #415066;
 }

@@ -8,13 +8,14 @@ define([
 	"./View",
 	"./_ScrollableMixin",
 	"./sniff",
-	"./_css3"
-], function(array, connect, declare, dom, domClass, registry, View, ScrollableMixin, has, css3){
+	"./_css3",
+	"dojo/has!dojo-bidi?dojox/mobile/bidi/SwapView"
+], function(array, connect, declare, dom, domClass, registry, View, ScrollableMixin, has, css3, BidiSwapView){
 
 	// module:
 	//		dojox/mobile/SwapView
 
-	return declare("dojox.mobile.SwapView", [View, ScrollableMixin], {
+	var SwapView = declare(has("dojo-bidi") ? "dojox.mobile.NonBidiSwapView" : "dojox.mobile.SwapView", [View, ScrollableMixin], {
 		// summary:
 		//		A container that can be swiped horizontally.
 		// description:
@@ -57,6 +58,16 @@ define([
 			array.forEach(this.getChildren(), function(child){
 				if(child.resize){ child.resize(); }
 			});
+		},
+
+		show: function(/*Boolean?*/noEvent, /*Boolean?*/doNotHideOthers){
+			// summary:
+			//		Shows this view without a transition animation.
+			var viewChanged = (this.getShowingView() != this);
+			this.inherited(arguments);
+			if(!noEvent && viewChanged){
+				connect.publish("/dojox/mobile/viewChanged", [this]);
+			};
 		},
 
 		onTouchStart: function(/*Event*/e){
@@ -254,6 +265,8 @@ define([
 							c.style.display = "none";
 							c.style[css3.name("transform")] = "";
 							c.style.left = "0px"; // top/left mode needs this
+							// reset the temporaty padding on the container node
+							c.style.paddingTop = "";
 						}
 					}
 				}, this);
@@ -265,4 +278,5 @@ define([
 			}
 		}
 	});
+	return has("dojo-bidi") ? declare("dojox.mobile.SwapView", [SwapView, BidiSwapView]) : SwapView;
 });

@@ -4,18 +4,45 @@ define([
 	"dojo/_base/connect",
 	"dojo/_base/lang",
 	"dojo/_base/window",
+	"dojo/_base/kernel",
 	"dojo/dom-class",
 	"dojo/dom-construct",
 	"dojo/ready",
+	"dojo/touch",
 	"dijit/registry",
 	"./sniff",
 	"./uacss" // (no direct references)
-], function(array, config, connect, lang, win, domClass, domConstruct, ready, registry, has){
+], function(array, config, connect, lang, win, kernel, domClass, domConstruct, ready, touch, registry, has){
 
 	// module:
 	//		dojox/mobile/common
 
 	var dm = lang.getObject("dojox.mobile", true);
+
+	// tell dojo/touch to generate synthetic clicks immediately
+	// and regardless of preventDefault() calls on touch events
+	win.doc.dojoClick = true;
+	/// ... but let user disable this by removing dojoClick from the document
+	if(has("touch")){
+		// Do we need to send synthetic clicks when preventDefault() is called on touch events?
+		// This is normally true on anything except Android 4.1+ and IE10, but users reported
+		// exceptions like Galaxy Note 2. So let's use a has("clicks-prevented") flag, and let
+		// applications override it through data-dojo-config="has:{'clicks-prevented':true}" if needed.
+		has.add("clicks-prevented", !(has("android") >= 4.1 || has("ie") >= 10));
+		if(has("clicks-prevented")){
+			dm._sendClick = function(target, e){
+				// dojo/touch will send a click if dojoClick is set, so don't do it again.
+				for(var node = target; node; node = node.parentNode){
+					if(node.dojoClick){
+						return;
+					}
+				}
+				var ev = win.doc.createEvent("MouseEvents"); 
+				ev.initMouseEvent("click", true, true, win.global, 1, e.screenX, e.screenY, e.clientX, e.clientY); 
+				target.dispatchEvent(ev);
+			};
+		}
+	}
 
 	dm.getScreenSize = function(){
 		// summary:
@@ -104,7 +131,7 @@ define([
 		//		finishes.
 		if(dm.disableHideAddressBar || dm._hiding){ return; }
 		dm._hiding = true;
-		dm._hidingTimer = has('iphone') ? 200 : 0; // Need to wait longer in case of iPhone
+		dm._hidingTimer = has("ios") ? 200 : 0; // Need to wait longer in case of iPhone
 		var minH = screen.availHeight;
 		if(has('android')){
 			minH = outerHeight / devicePixelRatio;
@@ -184,6 +211,68 @@ define([
 		win.global.open(url, target || "_blank");
 	};
 
+	dm._detectWindowsTheme = function(){
+		// summary:
+		//		Detects if the "windows" theme is used,
+		//		if it is used, set has("windows-theme") and
+		//		add the .windows_theme class on the document.
+		
+		// Avoid unwanted (un)zoom on some WP8 devices (at least Nokia Lumia 920) 
+		if(navigator.userAgent.match(/IEMobile\/10\.0/)){
+			domConstruct.create("style", 
+				{innerHTML: "@-ms-viewport {width: auto !important}"}, win.doc.head);
+		}
+
+		var setWindowsTheme = function(){
+			domClass.add(win.doc.documentElement, "windows_theme");
+			kernel.experimental("Dojo Mobile Windows theme", "Behavior and appearance of the Windows theme are experimental.");
+		};
+
+		// First see if the "windows-theme" feature has already been set explicitly
+		// in that case skip aut-detect
+		var windows = has("windows-theme");
+		if(windows !== undefined){
+			if(windows){
+				setWindowsTheme();
+			}
+			return;
+		}
+
+		// check css
+		var i, j;
+
+		var check = function(href){
+			// TODO: find a better regexp to match?
+			if(href && href.indexOf("/windows/") !== -1){
+				has.add("windows-theme", true);
+				setWindowsTheme();
+				return true;
+			}
+			return false;
+		};
+
+		// collect @import
+		var s = win.doc.styleSheets;
+		for(i = 0; i < s.length; i++){
+			if(s[i].href){ continue; }
+			var r = s[i].cssRules || s[i].imports;
+			if(!r){ continue; }
+			for(j = 0; j < r.length; j++){
+				if(check(r[j].href)){
+					return;
+				}
+			}
+		}
+
+		// collect <link>
+		var elems = win.doc.getElementsByTagName("link");
+		for(i = 0; i < elems.length; i++){
+			if(check(elems[i].href)){
+				return;
+			}
+		}
+	};
+
 	if(config["mblApplyPageStyles"] !== false){
 		domClass.add(win.doc.documentElement, "mobile");
 	}
@@ -207,9 +296,11 @@ define([
 	has.add('mblAndroid3Workaround', 
 			config["mblAndroid3Workaround"] !== false && has('android') >= 3, undefined, true);
 
+	dm._detectWindowsTheme();
+	
 	ready(function(){
 		dm.detectScreenSize(true);
-
+		domClass.add(win.body(), "mblBackground");
 		if(config["mblAndroidWorkaroundButtonStyle"] !== false && has('android')){
 			// workaround for the form button disappearing issue on Android 2.2-4.0
 			domConstruct.create("style", {innerHTML:"BUTTON,INPUT[type='button'],INPUT[type='submit'],INPUT[type='reset'],INPUT[type='file']::-webkit-file-upload-button{-webkit-appearance:none;}"}, win.doc.head, "first");
@@ -231,7 +322,7 @@ define([
 			}
 		}
 
-		var ios6 = has('iphone') >= 6; // Full-screen support for iOS6 or later 
+		var ios6 = has("ios") >= 6; // Full-screen support for iOS6 or later 
 		if((has('android') || ios6) && win.global.onorientationchange !== undefined){
 			var _f = f;
 			var curSize, curClientWidth, curClientHeight;

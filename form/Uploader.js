@@ -150,7 +150,8 @@ define([
 			if(this.showInput){
 				this.displayInput = domConstruct.create('input', {
 					  'class':'dijitUploadDisplayInput',
-					  'tabIndex':-1, 'autocomplete':'off'},
+					  'tabIndex':-1, 'autocomplete':'off',
+					  'role':'presentation'},
 					this.containerNode, this.showInput);
 				//schedule the attachpoint to be cleaned up on destroy
 				this._attachPoints.push('displayInput');
@@ -246,6 +247,7 @@ define([
 		upload: function(/*Object?*/ formData){				
 			// summary:
 			//		When called, begins file upload. Only supported with plugins.
+			formData = formData || {};
 			formData.uploadType = this.uploadType;
 			this.inherited(arguments);
 		},
@@ -360,7 +362,7 @@ define([
 			var name = this._getFileFieldName();
 			// reset focusNode to the inputNode, so when the button is clicked,
 			// the focus is properly moved to the input element
-			this.focusNode = this.inputNode = domConstruct.create("input", {type:"file", name:name}, this.domNode, "first");
+			this.focusNode = this.inputNode = domConstruct.create("input", {type:"file", name:name, "aria-labelledby":this.id+"_label"}, this.domNode, "first");
 			if(this.supports("multiple") && this.multiple){
 				domAttr.set(this.inputNode, "multiple", true);
 			}

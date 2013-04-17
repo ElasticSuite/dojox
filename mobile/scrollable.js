@@ -119,7 +119,10 @@ define([
 		//		- 3: use -webkit-transform:translate3d(x,y,z) style, use -webkit-transition for slide anim
 		//		- 0: use default value (2 in case of Android < 3, 3 if iOS6, otherwise 1)
 		scrollType: 0,
-
+		
+		// for Tooltip.js
+		_parentPadBorderExtentsBottom: 0,
+		
 		init: function(/*Object?*/params){
 			// summary:
 			//		Initialize according to the given params.
@@ -155,7 +158,7 @@ define([
 				// Flag for using webkit transition on transform, instead of animation + keyframes.
 				// (keyframes create a slight delay before the slide animation...)
 				if(!this._useTopLeft){
-					this._useTransformTransition = this.scrollType ? this.scrollType === 3 : has("iphone") >= 6;
+					this._useTransformTransition = this.scrollType ? this.scrollType === 3 : has("ios") >= 6;
 				}
 				if(!this._useTopLeft){
 					if(this._useTransformTransition){
@@ -187,9 +190,34 @@ define([
 				this.resize();
 			}
 			var _this = this;
-			setTimeout(function(){
+			setTimeout(function(){ 
+				// Why not using widget.defer() instead of setTimeout()? Because this module
+				// is not always mixed into a widget (ex. dojox/mobile/_ComboBoxMenu), and adding 
+				// a check to call either defer or setTimeout has been considered overkill.
 				_this.flashScrollBar();
 			}, 600);
+			
+			// #16363: while navigating among input field using TAB (desktop keyboard) or 
+			// NEXT (mobile soft keyboard), domNode.scrollTop gets modified (this holds even 
+			// if the text widget has selectOnFocus at false, that is even if dijit's _FormWidgetMixin._onFocus 
+			// does not trigger a global scrollIntoView). This messes up ScrollableView's own 
+			// scrolling machinery. To avoid this misbehavior:
+			if(win.global.addEventListener){ // all supported browsers but IE8
+				// (for IE8, using attachEvent is not a solution, because it only works in bubbling phase)
+				win.global.addEventListener("scroll", function(e){
+					if(_this.domNode.style.display === 'none'){ return; }
+					var scrollTop = _this.domNode.scrollTop;
+					var scrollLeft = _this.domNode.scrollLeft; 
+					var pos;
+					if(scrollTop > 0 || scrollLeft > 0){ 
+						pos = _this.getPos(); 
+						// Reset to zero while compensating using our own scroll: 
+						_this.domNode.scrollLeft = 0; 
+						_this.domNode.scrollTop = 0; 
+						_this.scrollTo({x: pos.x - scrollLeft, y: pos.y - scrollTop}); // no animation 
+					}
+				}, true);
+			}
 		},
 
 		isTopLevel: function(){
@@ -280,9 +308,9 @@ define([
 					this.domNode.style.height = "0px";
 					var	parentRect = parent.getBoundingClientRect(),
 						scrollableRect = this.domNode.getBoundingClientRect(),
-						contentBottom = parentRect.bottom - this._appFooterHeight;
+						contentBottom = parentRect.bottom - this._appFooterHeight - this._parentPadBorderExtentsBottom;
 					if(scrollableRect.bottom >= contentBottom){ // use entire screen
-						dh = screenHeight - (scrollableRect.top - parentRect.top) - this._appFooterHeight;
+						dh = screenHeight - (scrollableRect.top - parentRect.top) - this._appFooterHeight - this._parentPadBorderExtentsBottom;
 					}else{ // stretch to fill predefined area
 						dh = contentBottom - scrollableRect.bottom;
 					}
@@ -301,8 +329,10 @@ define([
 				this.domNode.style.height = h;
 			}
 
-			// to ensure that the view is within a scrolling area when resized.
-			this.onTouchEnd();
+			if(!this._conn){
+				// to ensure that the view is within a scrolling area when resized.
+				this.onTouchEnd();
+			}
 		},
 
 		onFlickAnimationStart: function(e){
@@ -310,32 +340,34 @@ define([
 		},
 
 		onFlickAnimationEnd: function(e){
-			var an = e && e.animationName;
-			if(an && an.indexOf("scrollableViewScroll2") === -1){
-				if(an.indexOf("scrollableViewScroll0") !== -1){ // scrollBarV
-					if(this._scrollBarNodeV){ domClass.remove(this._scrollBarNodeV, "mblScrollableScrollTo0"); }
-				}else if(an.indexOf("scrollableViewScroll1") !== -1){ // scrollBarH
-					if(this._scrollBarNodeH){ domClass.remove(this._scrollBarNodeH, "mblScrollableScrollTo1"); }
-				}else{ // fade or others
-					if(this._scrollBarNodeV){ this._scrollBarNodeV.className = ""; }
-					if(this._scrollBarNodeH){ this._scrollBarNodeH.className = ""; }
-				}
-				return;
-			}
-			if(this._useTransformTransition || this._useTopLeft){
-				var n = e.target;
-				if(n === this._scrollBarV || n === this._scrollBarH){
-					var cls = "mblScrollableScrollTo" + (n === this._scrollBarV ? "0" : "1");
-					if(domClass.contains(n, cls)){
-						domClass.remove(n, cls);
-					}else{
-						n.className = "";
+			if(e){
+				var an = e.animationName;
+				if(an && an.indexOf("scrollableViewScroll2") === -1){
+					if(an.indexOf("scrollableViewScroll0") !== -1){ // scrollBarV
+						if(this._scrollBarNodeV){ domClass.remove(this._scrollBarNodeV, "mblScrollableScrollTo0"); }
+					}else if(an.indexOf("scrollableViewScroll1") !== -1){ // scrollBarH
+						if(this._scrollBarNodeH){ domClass.remove(this._scrollBarNodeH, "mblScrollableScrollTo1"); }
+					}else{ // fade or others
+						if(this._scrollBarNodeV){ this._scrollBarNodeV.className = ""; }
+						if(this._scrollBarNodeH){ this._scrollBarNodeH.className = ""; }
 					}
 					return;
 				}
-			}
-			if(e && e.srcElement){
-				event.stop(e);
+				if(this._useTransformTransition || this._useTopLeft){
+					var n = e.target;
+					if(n === this._scrollBarV || n === this._scrollBarH){
+						var cls = "mblScrollableScrollTo" + (n === this._scrollBarV ? "0" : "1");
+						if(domClass.contains(n, cls)){
+							domClass.remove(n, cls);
+						}else{
+							n.className = "";
+						}
+						return;
+					}
+				}
+				if(e.srcElement){
+					event.stop(e);
+				}
 			}
 			this.stopAnimation();
 			if(this._bounce){
@@ -515,24 +547,15 @@ define([
 				if(clicked){ // clicked, not dragged or flicked
 					this.hideScrollBar();
 					this.removeCover();
-					// #12697 Do not generate a click event programmatically when a
-					// form element (input, select, etc.) is clicked.
-					// Otherwise, in particular, when checkbox is clicked, its state
-					// is reversed again by the generated event.
-					// #15878 The reason we send this synthetic click event is that we assume that the OS
-					// will not send the click because we prevented/stopped the touchstart.
-					// However, this does not seem true any more in Android 4.1 where the click is
-					// actually sent by the OS. So we must not send it a second time.
-					if(has('touch') && !this.isFormElement(e.target) && !(has("android") >= 4.1)){
+					// need to send a synthetic click?
+					if(has("touch") && has("clicks-prevented") && !this.isFormElement(e.target)){
 						var elem = e.target;
 						if(elem.nodeType != 1){
 							elem = elem.parentNode;
 						}
-						var ev = win.doc.createEvent("MouseEvents");
-						ev.initMouseEvent("click", true, true, win.global, 1, e.screenX, e.screenY, e.clientX, e.clientY);
 						setTimeout(function(){
-							elem.dispatchEvent(ev);
-						}, 0);
+							dm._sendClick(elem, e);
+						});
 					}
 					return;
 				}
@@ -551,15 +574,17 @@ define([
 
 			if(this.adjustDestination(to, pos, dim) === false){ return; }
 
-			if(this.scrollDir == "v" && dim.c.h < dim.d.h){ // content is shorter than display
-				this.slideTo({y:0}, 0.3, "ease-out"); // go back to the top
-				return;
-			}else if(this.scrollDir == "h" && dim.c.w < dim.d.w){ // content is narrower than display
-				this.slideTo({x:0}, 0.3, "ease-out"); // go back to the left
-				return;
-			}else if(this._v && this._h && dim.c.h < dim.d.h && dim.c.w < dim.d.w){
-				this.slideTo({x:0, y:0}, 0.3, "ease-out"); // go back to the top-left
-				return;
+			if(this.constraint){
+				if(this.scrollDir == "v" && dim.c.h < dim.d.h){ // content is shorter than display
+					this.slideTo({y:0}, 0.3, "ease-out"); // go back to the top
+					return;
+				}else if(this.scrollDir == "h" && dim.c.w < dim.d.w){ // content is narrower than display
+					this.slideTo({x:0}, 0.3, "ease-out"); // go back to the left
+					return;
+				}else if(this._v && this._h && dim.c.h < dim.d.h && dim.c.w < dim.d.w){
+					this.slideTo({x:0, y:0}, 0.3, "ease-out"); // go back to the top-left
+					return;
+				}
 			}
 
 			var duration, easing = "ease-out";
@@ -652,20 +677,35 @@ define([
 			//		This function stops the scrolling animation that is currently
 			//		running. It is called when the user touches the screen while
 			//		scrolling.
+			this._aborted = true;
 			this.scrollTo(this.getPos());
 			this.stopAnimation();
-			this._aborted = true;
 		},
-
+		_forceRendering: function(elt){
+			// tags:
+			//		private
+			//		There are issues with Android > 3: No acceleration and no way to stop the scrolling.
+			//		This workaround improves the scrolling behaviour.
+			if(has("android") >= 4.1){
+				var tmp = elt.style.display;
+				elt.style.display = "none";
+				elt.offsetHeight; // Accessing offsetHeight forces the rendering
+				elt.style.display = tmp;
+			}
+		},
 		stopAnimation: function(){
 			// summary:
 			//		Stops the currently running animation.
+
+			this._forceRendering(this.containerNode);
 			domClass.remove(this.containerNode, "mblScrollableScrollTo2");
 			if(this._scrollBarV){
 				this._scrollBarV.className = "";
+				this._forceRendering(this._scrollBarV);
 			}
 			if(this._scrollBarH){
 				this._scrollBarH.className = "";
+				this._forceRendering(this._scrollBarH);
 			}
 			if(this._useTransformTransition || this._useTopLeft){
 				this.containerNode.style[css3.name("transition")] = "";
@@ -746,15 +786,45 @@ define([
 			//		A DOM node to scroll. If not specified, defaults to
 			//		this.containerNode.
 
-			var s = (node || this.containerNode).style;
-			if(has("css3-animations")){
-				if(!this._useTopLeft){
-					if(this._useTransformTransition){
-						s[css3.name("transition")] = "";	
+			// scroll events
+			var scrollEvent, beforeTopHeight, afterBottomHeight;
+			var doScroll = true;
+			if(!this._aborted && this._conn){ // No scroll event if the call to scrollTo comes from abort or onTouchEnd
+				if(!this._dim){
+					this._dim = this.getDim();
+				}
+				beforeTopHeight = (to.y > 0)?to.y:0;
+				afterBottomHeight = (this._dim.o.h + to.y < 0)?-1 * (this._dim.o.h + to.y):0;
+				scrollEvent = {bubbles: false,
+						cancelable: false,
+						x: to.x,
+						y: to.y,
+						beforeTop: beforeTopHeight > 0,
+						beforeTopHeight: beforeTopHeight,
+						afterBottom: afterBottomHeight > 0,
+						afterBottomHeight: afterBottomHeight};
+				// before scroll event
+				doScroll = this.onBeforeScroll(scrollEvent);
+			}
+			
+			if(doScroll){
+				var s = (node || this.containerNode).style;
+				if(has("css3-animations")){
+					if(!this._useTopLeft){
+						if(this._useTransformTransition){
+							s[css3.name("transition")] = "";	
+						}
+						s[css3.name("transform")] = this.makeTranslateStr(to);
+					}else{
+						s[css3.name("transition")] = "";
+						if(this._v){
+							s.top = to.y + "px";
+						}
+						if(this._h || this._f){
+							s.left = to.x + "px";
+						}
 					}
-					s[css3.name("transform")] = this.makeTranslateStr(to);
 				}else{
-					s[css3.name("transition")] = "";
 					if(this._v){
 						s.top = to.y + "px";
 					}
@@ -762,19 +832,48 @@ define([
 						s.left = to.x + "px";
 					}
 				}
-			}else{
-				if(this._v){
-					s.top = to.y + "px";
+				if(!doNotMoveScrollBar){
+					this.scrollScrollBarTo(this.calcScrollBarPos(to));
 				}
-				if(this._h || this._f){
-					s.left = to.x + "px";
+				if(scrollEvent){
+					// After scroll event
+					this.onAfterScroll(scrollEvent);
 				}
-			}
-			if(!doNotMoveScrollBar){
-				this.scrollScrollBarTo(this.calcScrollBarPos(to));
 			}
 		},
 
+		onBeforeScroll: function(/*Event*/e){
+			// e: Event
+			//		the scroll event, that contains the following attributes:
+			//		x (x coordinate of the scroll destination),
+			//		y (y coordinate of the scroll destination),
+			//		beforeTop (a boolean that is true if the scroll detination is before the top of the scrollable),
+			//		beforeTopHeight (the number of pixels before the top of the scrollable for the scroll destination),
+			//		afterBottom (a boolean that is true if the scroll destination is after the bottom of the scrollable),
+			//		afterBottomHeight (the number of pixels after the bottom of the scrollable for the scroll destination)
+			// summary:
+			//		called before a scroll is initiated. If this method returns false,
+			//		the scroll is canceled.
+			// tags:
+			//		callback
+			return true;
+		},
+
+		onAfterScroll: function(/*Event*/e){
+			// e: Event
+			//		the scroll event, that contains the following attributes:
+			//		x (x coordinate of the scroll destination),
+			//		y (y coordinate of the scroll destination),
+			//		beforeTop (a boolean that is true if the scroll detination is before the top of the scrollable),
+			//		beforeTopHeight (the number of pixels before the top of the scrollable for the scroll destination),
+			//		afterBottom (a boolean that is true if the scroll destination is after the bottom of the scrollable),
+			//		afterBottomHeight (the number of pixels after the bottom of the scrollable for the scroll destination)
+			// summary:
+			//		called after a scroll has been performed.
+			// tags:
+			//		callback
+		},
+		
 		slideTo: function(/*Object*/to, /*Number*/duration, /*String*/easing){
 			// summary:
 			//		Scrolls to the given position with the slide animation.
@@ -842,10 +941,10 @@ define([
 			d.v = {h:this.domNode.offsetHeight + this._appFooterHeight, w:this.domNode.offsetWidth};
 
 			// display width/height
-			d.d = {h:d.v.h - this.fixedHeaderHeight - this.fixedFooterHeight, w:d.v.w};
+			d.d = {h:d.v.h - this.fixedHeaderHeight - this.fixedFooterHeight - this._appFooterHeight, w:d.v.w};
 
 			// overflowed width/height
-			d.o = {h:d.c.h - d.v.h + this.fixedHeaderHeight + this.fixedFooterHeight, w:d.c.w - d.v.w};
+			d.o = {h:d.c.h - d.v.h + this.fixedHeaderHeight + this.fixedFooterHeight + this._appFooterHeight, w:d.c.w - d.v.w};
 			return d;
 		},
 

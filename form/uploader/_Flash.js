@@ -27,6 +27,10 @@ define([
 		// swfPath:String
 		//		Path to SWF. Can be overwritten or provided in djConfig.
 		swfPath:config.uploaderPath || require.toUrl("dojox/form/resources/uploader.swf"),
+
+		// preventCache: Boolean
+		//		If true, then flash request is sent with a value that changes with each request (timestamp)
+		preventCache: true,
 	
 		// skipServerCheck: Boolean
 		//		If true, will not verify that the server was sent the correct format.
@@ -117,6 +121,7 @@ define([
 		flashReset: function(){
 			this.flashMovie.reset();
 			this._files = [];
+			this._fileMap = {};
 		},
 	
 		/*************************
@@ -129,8 +134,10 @@ define([
 			// tags:
 			//		private
 			this.onBegin(this.getFileList());
+			formData = formData || {};
 			formData.returnType = "F";
 			formData.uploadType = this.uploadType;
+			console.log('flas upload', formData);
 			this.flashMovie.doUpload(formData);
 		},
 	
@@ -254,7 +261,7 @@ define([
 	
 			var args = {
 				expressInstall:true,
-				path: (this.swfPath.uri || this.swfPath) + "?cb_" + (new Date().getTime()),
+				path: (this.swfPath.uri || this.swfPath) + ((this.preventCache)?("?cb_" + (new Date().getTime())):""),
 				width: w,
 				height: h,
 				allowScriptAccess:"always",

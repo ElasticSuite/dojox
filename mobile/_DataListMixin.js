@@ -5,12 +5,12 @@ define([
 	"./_DataMixin",
 	"./ListItem",
 	"dojo/has",
-	"dojo/has!dojo-bidi?dojox/mobile/bidi/_DataListMixin"	
+	"dojo/has!dojo-bidi?dojox/mobile/bidi/_StoreListMixin"
 ], function(array, declare, registry, DataMixin, ListItem, has, BidiDataListMixin){
 
 	// module:
 	//		dojox/mobile/_DataListMixin
-	
+
 	var _DataListMixin = declare(has("dojo-bidi") ? "dojox.mobile._NonBidiDataListMixin" : "dojox.mobile._DataListMixin", DataMixin, {
 		// summary:
 		//		Mixin for widgets to generate the list items corresponding to
@@ -18,7 +18,7 @@ define([
 		// description:
 		//		By mixing this class into the widgets, the list item nodes are
 		//		generated as the child nodes of the widget and automatically
-		//		re-generated whenever the corresponding data items are modified.
+		//		regenerated whenever the corresponding data items are modified.
 
 		// append: Boolean
 		//		If true, refresh() does not clear the existing items.
@@ -55,11 +55,16 @@ define([
 					attr[(this.itemMap && this.itemMap[name]) || name] = this.store.getValue(item, name);
 				}
 			}, this);
+			// TODO this code should be like for textDir in the bidi mixin createListItem method
+			// however for that dynamic set/get of the dir property must be supported first
+			// that is why for now as a workaround we keep the code here
+			if(has("dojo-bidi") && typeof attr["dir"] == "undefined"){
+				attr["dir"] = this.isLeftToRight() ? "ltr" : "rtl";
+			}
 			var w = new this.itemRenderer(attr);
 			item._widgetId = w.id;
 			return w;
 		},
-
 		generateList: function(/*Array*/items, /*Object*/dataObject){
 			// summary:
 			//		Given the data, generates a list of items.

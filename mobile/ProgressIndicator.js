@@ -27,8 +27,10 @@ define([
 		//		indicator.
 		interval: 100,
 
-		// size: Number
+		// size: [const] Number
 		//		The size of the indicator in pixels.
+		//		Note that changing the value of the property after the widget
+		//		creation has no effect.
 		size: 40,
 
 		// removeOnStop: Boolean

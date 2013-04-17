@@ -1,6 +1,6 @@
-define(["dojo/_base/lang", "dojo/_base/declare", "dojo/_base/array", 
+define(["dojo/_base/lang", "dojo/_base/declare", "dojo/_base/array", "dojo/has", 
 		"./CartesianBase", "./_PlotEvents", "./common", "dojox/lang/functional", "dojox/lang/functional/reversed", "dojox/lang/utils", "dojox/gfx/fx"],
-	function(lang, declare, arr, CartesianBase, _PlotEvents, dc, df, dfr, du, fx){
+	function(lang, declare, arr, has, CartesianBase, _PlotEvents, dc, df, dfr, du, fx){
 
 	/*=====
 	declare("dojox.charting.plot2d.__DefaultCtorArgs", dojox.charting.plot2d.__CartesianCtorArgs, {
@@ -46,6 +46,11 @@ define(["dojo/_base/lang", "dojo/_base/declare", "dojo/_base/array",
 		// fill: dojox.gfx.Fill?
 		//		Any fill to be used for elements on the plot (such as areas).
 		fill:		{},
+
+		// filter: dojox.gfx.Filter?
+		//		An SVG filter to be used for elements on the plot. gfx SVG renderer must be used and dojox/gfx/svgext must
+		//		be required for this to work.
+		filter:		{},
 
 		// styleFunc: Function?
 		//		A function that returns a styling object for the a given data item.
@@ -121,6 +126,7 @@ define(["dojo/_base/lang", "dojo/_base/declare", "dojo/_base/array",
 			outline:	{},
 			shadow:		{},
 			fill:		{},
+			filter:     {},
 			styleFunc: null,
 			font:		"",
 			fontColor:	"",
@@ -334,6 +340,7 @@ define(["dojo/_base/lang", "dojo/_base/declare", "dojo/_base/array",
 						}
 					}
 					if(this.opt.lines && lpoly.length > 1){
+						var shape;
 						if(outline){
 							if(this.opt.tension){
 								run.dyn.outline = s.createPath(lpath).setStroke(outline).getStroke();
@@ -342,9 +349,12 @@ define(["dojo/_base/lang", "dojo/_base/declare", "dojo/_base/array",
 							}
 						}
 						if(this.opt.tension){
-							run.dyn.stroke = s.createPath(lpath).setStroke(stroke).getStroke();
+							run.dyn.stroke = (shape = s.createPath(lpath)).setStroke(stroke).getStroke();
 						} else {
-							run.dyn.stroke = s.createPolyline(lpoly).setStroke(stroke).getStroke();
+							run.dyn.stroke = (shape = s.createPolyline(lpoly)).setStroke(stroke).getStroke();
+						}
+						if(shape.setFilter && theme.series.filter){
+							shape.setFilter(theme.series.filter);
 						}
 					}
 					var markerBox = null;
@@ -425,8 +435,8 @@ define(["dojo/_base/lang", "dojo/_base/declare", "dojo/_base/array",
 				run.dirty = false;
 			}
 			// chart mirroring starts
-			if(this.chart.isRightToLeft && this.chart.isRightToLeft()){
-				this.chart.applyMirroring(this.group, dim, offsets);
+			if(has("dojo-bidi")){
+				this._checkOrientation(this.group, dim, offsets);
 			}
 			// chart mirroring ends
 			if(this.animate){

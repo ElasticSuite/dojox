@@ -1,6 +1,6 @@
-define(["dojo/_base/lang", "dojo/_base/declare", "dojo/_base/connect",
-		"./Base", "../scaler/primitive", "dojox/gfx", "dojox/gfx/fx", "dojox/lang/utils"],
-	function(lang, declare, hub, Base, primitive, gfx, fx, du){
+define(["dojo/_base/lang", "dojo/_base/declare", "dojo/_base/connect", "dojo/has",
+		"./Base", "../scaler/primitive", "dojox/gfx", "dojox/gfx/fx", "dojox/lang/utils"], 
+	function(lang, declare, hub, has, Base, primitive, gfx, fx, du){
 	/*=====
 	declare("dojox.charting.plot2d.__CartesianCtorArgs", dojox.charting.plot2d.__PlotCtorArgs, {
 		// hAxis: String?
