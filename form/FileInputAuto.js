@@ -94,8 +94,10 @@ var FileInputAuto = declare("dojox.form.FileInputAuto", FileInput,
 		
 		// innerHTML throws errors in IE! so use DOM manipulation instead
 		//this.overlay.innerHTML = title;
-		this.overlay.removeChild(this.overlay.firstChild);
-		this.overlay.appendChild(document.createTextNode(title));
+		try {
+			this.overlay.removeChild(this.overlay.firstChild);
+			this.overlay.appendChild(document.createTextNode(title));
+		} catch(e) {}
 	},
 	
 	_sendFile: function(/*Event*/ e){
@@ -144,7 +146,9 @@ var FileInputAuto = declare("dojox.form.FileInputAuto", FileInput,
 		//		The callback to toggle the progressbar, and fire the user-defined callback
 
 		// innerHTML throws errors in IE! so use DOM manipulation instead
-		this.overlay.removeChild(this.overlay.firstChild);
+		try {
+			this.overlay.removeChild(this.overlay.firstChild);
+		} catch(e) {}
 		
 		this._sent = true;
 		this._sending = false;
