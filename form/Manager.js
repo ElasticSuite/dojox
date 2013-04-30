@@ -1,6 +1,6 @@
 define([
 	"dijit/_Widget",
-	"dijit/_AttachMixin",
+	//"dijit/_AttachMixin",
 	"dijit/_WidgetsInTemplateMixin",
 	"./manager/_Mixin",
 	"./manager/_NodeMixin",
@@ -10,9 +10,9 @@ define([
 	"./manager/_DisplayMixin",
 	"./manager/_ClassMixin",
 	"dojo/_base/declare"
-], function(_Widget, _AttachMixin, _WidgetsInTemplateMixin, _Mixin, _NodeMixin, _FormMixin, _ValueMixin, _EnableMixin, _DisplayMixin, _ClassMixin, declare){
+], function(_Widget, /*_AttachMixin,*/ _WidgetsInTemplateMixin, _Mixin, _NodeMixin, _FormMixin, _ValueMixin, _EnableMixin, _DisplayMixin, _ClassMixin, declare){
 
-return declare("dojox.form.Manager", [ _Widget, _WidgetsInTemplateMixin, _AttachMixin, _Mixin, _NodeMixin, _FormMixin, _ValueMixin, _EnableMixin, _DisplayMixin, _ClassMixin ], {
+return declare("dojox.form.Manager", [ _Widget, _WidgetsInTemplateMixin, /*_AttachMixin*/, _Mixin, _NodeMixin, _FormMixin, _ValueMixin, _EnableMixin, _DisplayMixin, _ClassMixin ], {
 	// summary:
 	//		The widget to orchestrate dynamic forms.
 	// description:
