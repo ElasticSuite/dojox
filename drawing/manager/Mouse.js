@@ -162,15 +162,18 @@ return oo.declare(
 			this.origin = dojo.clone(pos);
 		},
 		
-		scrollOffset: function(){
-			// summary:
-			// 	Gets scroll offset of canvas
+	    scrollOffset: function () {
+	      // summary:
+	      // 	Gets scroll offset of canvas
+	      if (this.container.parentNode) {
 			return {
-				top:this.container.parentNode.scrollTop,
-				left:this.container.parentNode.scrollLeft
+			  top: this.container.parentNode.scrollTop,
+			  left: this.container.parentNode.scrollLeft
 			}; // Object
-		},
-
+	      } else {
+			return {};
+	      }
+	    },
 		resize: function(width,height){
 			if(this.origin){
 				this.origin.w=width;
