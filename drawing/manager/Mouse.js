@@ -248,7 +248,7 @@ return oo.declare(
 		overName: function(obj,evt){
 			var nm = obj.id.split(".");
 			evt = evt.charAt(0).toUpperCase() + evt.substring(1);
-			if(nm[0] == "dojox" && (defaults.clickable || !defaults.clickMode)){
+			if((nm[0] == "dojox" || nm[0] == "scramble") && (defaults.clickable || !defaults.clickMode)){
 				return "onStencil"+evt;
 			}else{
 				return "on"+evt;
