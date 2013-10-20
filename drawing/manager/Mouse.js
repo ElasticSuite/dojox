@@ -364,7 +364,7 @@ return oo.declare(
 			var x = dim.x - o.x + sc.left;
 			var y = dim.y - o.y + sc.top;
 			
-			var withinCanvas = x>=0 && y>=0 && x<=o.w && y<=o.h;
+			var withinCanvas = x>=0 && y>=0 && x<=o.w + sc.left && y<=o.h + sc.top;
 			x*= this.zoom;
 			y*= this.zoom;
 			
@@ -448,7 +448,7 @@ return oo.declare(
 			var x = dim.x - o.x + sc.left;
 			var y = dim.y - o.y + sc.top;
 
-			var withinCanvas = x>=0 && y>=0 && x<=o.w && y<=o.h;
+			var withinCanvas = x>=0 && y>=0 && x<=o.w + sc.left && y<=o.h + sc.top;
 			x*= this.zoom;
 			y*= this.zoom;
 			
