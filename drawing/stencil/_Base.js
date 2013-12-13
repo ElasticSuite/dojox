@@ -980,7 +980,7 @@ var Base = oo.declare(
 				dojo.forEach(this.points, function(p){
 					p.x = p.x < 0 ? this.marginZero : p.x;
 					p.y = p.y < 0 ? this.marginZero : p.y;
-				});
+				}, this);
 			}
 			this.setPoints(this.points);
 		},
