@@ -190,7 +190,11 @@ var Base = oo.declare(
 			this.util.attr(this.container, "id", this.id);
 		}
 
-		this.connect(this, "onBeforeRender", "preventNegativePos");
+		// LYLE: I'm electing to disable this because it causes problems with nested
+		// stencils, and i think it only really affects lame IE VML implementations.
+		// It doesn't seem to immediately break anything, so let's just see what
+		// happens. ElasticSuite/scramble4#1487
+		//this.connect(this, "onBeforeRender", "preventNegativePos");
 
 		this._offX = this.mouse.origin.x;
 		this._offY = this.mouse.origin.y;
