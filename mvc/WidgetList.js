@@ -206,7 +206,7 @@ define([
 			//		Create child widgets upon children and inserts them into the container node.
 
 			unwatchElements(this);
-			for(var cw = this.getChildren(), w = null; w = cw.pop();){ this.removeChild(w); w.destroy(); }
+			for(var cw = this.getChildren(), w = null; w = cw.pop();){ this.removeChild(w); w.destroyRecursive(); }
 			if(!lang.isArray(children)){ return; }
 
 			var _self = this,
@@ -236,7 +236,9 @@ define([
 
 					// Remove child widgets upon the array removals
 					for(var i = 0, l = (item.removals || []).length; i < l; ++i){
-						this.removeChild(item.idx);
+            var widget = this.getChildren()[item.idx];
+						this.removeChild(widget);
+            widget.destroyRecursive();
 					}
 
 					// Create/add child widgets upon the array adds
