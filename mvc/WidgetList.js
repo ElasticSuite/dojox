@@ -78,7 +78,7 @@ define([
 		// |			<script type="dojox/mvc/InlineTemplate">
 		// |				<div>
 		// |					<span data-dojo-type="dijit/_WidgetBase"
-		// |					 data-dojo-props="_setValueAttr: {node: 'domNode', type: 'innerText'}, value: at('rel:', 'Serial')"></span>: 
+		// |					 data-dojo-props="_setValueAttr: {node: 'domNode', type: 'innerText'}, value: at('rel:', 'Serial')"></span>:
 		// |					<span data-dojo-type="dijit/form/TextBox"
 		// |					 data-dojo-props="value: at('rel:', 'First')"></span>
 		// |				</div>
@@ -236,7 +236,9 @@ define([
 
 					// Remove child widgets upon the array removals
 					for(var i = 0, l = (item.removals || []).length; i < l; ++i){
+						var child = this.getChildren()[item.idx];
 						this.removeChild(item.idx);
+						child.destroyRecursive();
 					}
 
 					// Create/add child widgets upon the array adds
