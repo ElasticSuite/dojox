@@ -418,6 +418,7 @@ function(dojo, oo, defaults){
 					}
 					this.group.moveToFront();
 					this.setConstraint();
+					this._isBusy = false;
 					return;
 				
 				}else if(this.selectedStencils[obj.id]){
@@ -427,6 +428,7 @@ function(dojo, oo, defaults){
 					var mx = this.group.getTransform();
 					this._offx = obj.x - mx.dx;
 					this._offy = obj.y - mx.dy;
+					this._isBusy = false;
 					return;
 				
 				}else if(!this.keys.meta){
