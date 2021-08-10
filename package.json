@@ -1,13 +1,13 @@
 {
-	"name": "dojox",
-	"version":"1.9.0dev",
+	"name": "@elastic-internal/dojox",
+	"version":"1.9.0elastic",
 	"directories": {
 		"lib": "."
 	},
 	"main": "main",
 	"dependencies": {
-		"dojo":"1.9.0dev",
-		"dijit":"1.9.0dev"
+		"dojo":"1.12.0-elastic",
+    "@elastic-internal/dijit": "1.10.1-elastic"
 	},
 	"description": "Dojo eXtensions, a rollup of many useful sub-projects and varying states of maturity – from very stable and robust, to alpha and experimental. See individual projects contain README files for details.",
 	"licenses": [
