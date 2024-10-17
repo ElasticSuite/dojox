@@ -1,6 +1,6 @@
 {
 	"name": "@elastic-internal/dojox",
-	"version":"1.9.0elastic",
+	"version":"1.9.2elastic",
 	"directories": {
 		"lib": "."
 	},

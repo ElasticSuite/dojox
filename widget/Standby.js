@@ -45,7 +45,7 @@ return declare("dojox.widget.Standby", [_Widget, _TemplatedMixin],{
 	// image: String
 	//		A URL to an image to center within the blocking overlay.
 	//		The default is a basic spinner.
-	image: require.toUrl("dojox/widget/Standby/images/loading.gif").toString(),
+	image: require.toUrl("@elastic-internal/dojox/widget/Standby/images/loading.gif").toString(),
 
 	// imageText: String
 	//		Text to set on the ALT tag of the image.
